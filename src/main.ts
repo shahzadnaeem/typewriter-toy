@@ -3,7 +3,7 @@ import Typewriter, { Options } from "./Typewriter";
 
 const root = document.querySelector("#app") as HTMLElement;
 const options: Options = {
-  loop: true,
+  loop: false,
   typingSpeed: 120,
   deletingRate: 4,
 };

@@ -16,22 +16,31 @@ type ActionType = (resolve: () => void) => void;
 
 class Typewriter {
   #root: HTMLElement;
-  #div: HTMLDivElement;
+  #span: HTMLSpanElement;
+  #cursor: HTMLSpanElement;
   #debug: HTMLDivElement;
   #options: Options;
   #queue: Queue = [];
 
   constructor(root: HTMLElement, options: Options = defaultOptions) {
     this.#root = root;
+    this.#options = options;
+
     const div = document.createElement("div");
     div.className = "typewriter";
     this.#root.appendChild(div);
-    this.#div = div;
+    const span = document.createElement("span");
+    div.appendChild(span);
+    this.#span = span;
+    const cursor = document.createElement("span");
+    cursor.append("┃");
+    div.appendChild(cursor);
+    this.#cursor = cursor;
+
     const debug = document.createElement("div");
     debug.className = "debug";
     this.#root.appendChild(debug);
     this.#debug = debug;
-    this.#options = options;
   }
 
   #addAction(fn: ActionType) {
@@ -43,7 +52,7 @@ class Typewriter {
       let i = 0;
 
       const interval = setInterval(() => {
-        this.#div.append(message[i++]);
+        this.#span.append(message[i++]);
         if (i === message.length) {
           clearInterval(interval);
           resolve();
@@ -60,7 +69,7 @@ class Typewriter {
       let message = fn();
 
       const interval = setInterval(() => {
-        this.#div.append(message[i++]);
+        this.#span.append(message[i++]);
         if (i === message.length) {
           clearInterval(interval);
           resolve();
@@ -73,16 +82,7 @@ class Typewriter {
 
   clear() {
     this.#addAction((resolve) => {
-      this.#div.innerText = "";
-      resolve();
-    });
-
-    return this;
-  }
-
-  debug(message: string) {
-    this.#addAction((resolve) => {
-      this.debugNow(message);
+      this.#span.innerText = "";
       resolve();
     });
 
@@ -97,8 +97,25 @@ class Typewriter {
     return this;
   }
 
+  debug(message: string) {
+    this.#addAction((resolve) => {
+      this.debugNow(message);
+      resolve();
+    });
+
+    return this;
+  }
+
   debugNow(message: string) {
     this.#debug.append(`${message}\n`);
+  }
+
+  debugClearNow() {
+    this.#debug.innerText = "";
+  }
+
+  setCursor(state: boolean) {
+    this.#cursor.className = state ? "cursor-on" : "cursor-off";
   }
 
   async start() {
@@ -106,12 +123,21 @@ class Typewriter {
     let loopNum = 1;
     let actionCount = numActions;
 
+    let cursor = true;
+    this.setCursor(cursor);
+
+    const interval = setInterval(() => {
+      cursor = !cursor;
+      this.setCursor(cursor);
+    }, 500);
+
     this.debugNow(`Starting loop: ${loopNum} with ${numActions} actions`);
 
     let action = this.#queue.shift();
     while (action) {
       if (this.#options.loop && actionCount === 0) {
         actionCount = numActions;
+        if (loopNum % 2 === 0) this.debugClearNow();
         loopNum++;
         this.debugNow(`Starting loop: ${loopNum} with ${numActions} actions`);
       }
@@ -121,6 +147,10 @@ class Typewriter {
       action = this.#queue.shift();
       actionCount--;
     }
+
+    clearInterval(interval);
+
+    this.setCursor(false);
   }
 }
 

@@ -40,3 +40,13 @@
   max-height: 40vh;
   overflow-y: auto;
 }
+
+.cursor-on {
+  font-weight: 900;
+  color: #adff2f;
+}
+
+.cursor-off {
+  font-weight: 900;
+  color: #adff2f20;
+}
