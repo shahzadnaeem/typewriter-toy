@@ -3,7 +3,8 @@ import Typewriter, { Options } from "./Typewriter";
 
 const root = document.querySelector("#app") as HTMLElement;
 const options: Options = {
-  loop: true,
+  loop: 3,
+  autoStart: true,
   typingSpeed: 50,
   deletingRate: 10,
 };
@@ -20,7 +21,7 @@ tw.clear()
   .type("\n\n")
   .rainbow("ROYGBIV -- I-love-rainbows-a-lot")
   .colour("firebrick")
-  .type("\n\nWhat a joyful things this is :)")
+  .rainbow("\n\nWhat a joyful things this is :)")
   .delay(500)
   .erase()
   .type("\nShould be same colour as last letter of text above!")
@@ -36,6 +37,6 @@ tw.clear()
     "\n\nThis is an all in one, type, delay erase thing!",
     500
   )
-  .debug("")
   .delay(1500)
-  .start();
+  .ready();
+// .start();

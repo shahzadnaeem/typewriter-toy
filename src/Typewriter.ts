@@ -1,11 +1,13 @@
 export interface Options {
-  loop: boolean;
+  loop: boolean | number;
+  autoStart: boolean;
   typingSpeed: number;
   deletingRate: number;
 }
 
 const defaultOptions: Options = {
   loop: false,
+  autoStart: false,
   typingSpeed: 50,
   deletingRate: 5,
 };
@@ -17,6 +19,7 @@ type ActionType = (resolve: ResolveFnType) => void;
 
 class Typewriter {
   #root: HTMLElement;
+  #startButton: HTMLButtonElement;
   #div: HTMLDivElement;
   #span: HTMLSpanElement;
   #spans: HTMLSpanElement[];
@@ -24,10 +27,23 @@ class Typewriter {
   #debug: HTMLDivElement;
   #options: Options;
   #queue: Queue = [];
+  #running: boolean;
 
   constructor(root: HTMLElement, options: Options = defaultOptions) {
     this.#root = root;
     this.#options = options;
+    this.#running = false;
+
+    const button = document.createElement("button");
+    button.setAttribute("disabled", "");
+    button.innerText = "Start!";
+    button.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (!this.#running) {
+        this.start();
+      }
+    });
+    this.#startButton = this.#root.appendChild(button);
 
     const div = document.createElement("div");
     this.#div = this.#root.appendChild(div);
@@ -194,6 +210,8 @@ class Typewriter {
       "violet",
     ]
   ) {
+    this.debugNow(`Creating a rainbow with ${message.length} letters`);
+
     if (message.length && cols.length) {
       const chars = message.split("");
       let i = 0;
@@ -252,40 +270,60 @@ class Typewriter {
     this.#cursor.className = state ? "cursor-on" : "cursor-off";
   }
 
+  #enableStartButton() {
+    this.#startButton.removeAttribute("disabled");
+    this.debugNow("Start! button ENABLED");
+  }
+
+  #disableStartButton() {
+    this.#startButton.setAttribute("disabled", "");
+    this.debugNow("Start! button disabled");
+  }
+
+  ready() {
+    this.#enableStartButton();
+    if (this.#options.autoStart) {
+      this.start();
+    }
+    return this;
+  }
+
   async start() {
-    const numActions = this.#queue.length;
-    let loopNum = 1;
-    let actionCount = numActions;
+    this.#running = true;
+    this.#disableStartButton();
 
     let cursor = true;
-    this.setCursor(cursor);
 
-    const interval = setInterval(() => {
-      cursor = !cursor;
+    const cursorInterval = setInterval(() => {
       this.setCursor(cursor);
+      cursor = !cursor;
     }, 500);
 
-    this.debugNow(`Starting loop: ${loopNum} with ${numActions} actions`);
+    const numActions = this.#queue.length;
+    let loopNum = 0;
 
-    let action = this.#queue.shift();
-    while (action) {
-      if (this.#options.loop && actionCount === 0) {
-        actionCount = numActions;
-        if (loopNum % 2 === 0) this.debugClearNow();
-        loopNum++;
-        this.debugNow(`Starting loop: ${loopNum} with ${numActions} actions`);
+    do {
+      loopNum++;
+
+      if (loopNum % 2 === 1) {
+        this.debugClearNow();
+        this.debugNow(
+          `## Starting loop: ${loopNum} of ${
+            this.#options.loop
+          } with ${numActions} actions`
+        );
       }
 
-      await action();
+      for (let action of this.#queue) {
+        await action();
+      }
+    } while (this.#options.loop && this.#options.loop !== loopNum);
 
-      if (this.#options.loop) this.#queue.push(action);
-      action = this.#queue.shift();
-      actionCount--;
-    }
+    clearInterval(cursorInterval);
 
-    clearInterval(interval);
-
-    this.setCursor(false);
+    this.setCursor(true);
+    this.#enableStartButton();
+    this.#running = false;
   }
 }
 
