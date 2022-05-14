@@ -12,7 +12,7 @@ const defaultOptions: Options = {
 
 type QueueItem = () => Promise<void>;
 type Queue = QueueItem[];
-type ResolveFnType = () => void;
+type ResolveFnType = (v?: any) => void;
 type ActionType = (resolve: ResolveFnType) => void;
 
 class Typewriter {
@@ -47,9 +47,9 @@ class Typewriter {
     this.#debug.className = "debug";
   }
 
-  #addAction(fn: ActionType) {
-    this.#queue.push(() => new Promise(fn));
-  }
+  #newAction = (fn: ActionType) => new Promise(fn);
+  #queueAction = (fn: ActionType) =>
+    this.#queue.push(() => this.#newAction(fn));
 
   doType(message: string, resolve: ResolveFnType) {
     let i = 0;
@@ -69,7 +69,7 @@ class Typewriter {
   }
 
   type(message: string, msDelay = 0) {
-    this.#addAction((resolve) => {
+    this.#queueAction((resolve) => {
       this.doType(message, resolve);
     });
 
@@ -79,7 +79,7 @@ class Typewriter {
   }
 
   dynamicType(fn: () => string, msDelay = 0) {
-    this.#addAction((resolve) => {
+    this.#queueAction((resolve) => {
       let message = fn();
 
       this.doType(message, resolve);
@@ -91,7 +91,7 @@ class Typewriter {
   }
 
   colour(col: string, message: string = "") {
-    this.#addAction((resolve) => {
+    this.#queueAction((resolve) => {
       const span = document.createElement("span");
       span.style.color = col;
 
@@ -106,28 +106,68 @@ class Typewriter {
     return this;
   }
 
+  //
+  // DONE: Experiment to use async/await and promises for each sub-action
+  //       This is an alternative to allInOne() which adds an action for each
+  //
+  async doColour2(col: string, message: string, resolve: ResolveFnType) {
+    const span = document.createElement("span");
+    span.style.color = col;
+
+    this.#span = this.#div.insertBefore(span, this.#cursor);
+    this.#spans.push(this.#span);
+
+    await this.#newAction((res) => this.doType(message, res));
+    await this.#newAction((res) => this.doDelay(500, res));
+    await this.#newAction((res) => this.doType(message, res));
+    await this.#newAction((res) => this.doDelay(500, res));
+    await this.#newAction((res) => this.doType(message, res));
+
+    resolve();
+  }
+
+  colour2(col: string, message: string = "") {
+    this.#queueAction((resolve) => {
+      this.doColour2(col, message, resolve);
+    });
+
+    return this;
+  }
+
   #removeLastChar(el: HTMLSpanElement) {
     el.innerText = el.innerText.slice(0, el.innerText.length - 1);
   }
 
-  erase() {
-    this.#addAction((resolve) => {
-      let i = 0;
-      let numToErase = this.#span.innerText.length;
+  doErase(resolve: ResolveFnType) {
+    let i = 0;
+    let numToErase = this.#span.innerText.length;
 
-      const interval = setInterval(() => {
-        this.#removeLastChar(this.#span);
-        i++;
-        if (i === numToErase) {
-          clearInterval(interval);
-          if (this.#spans.length > 1) {
-            this.#div.removeChild(this.#span);
-            this.#span = this.#spans[this.#spans.length - 2];
-            this.#spans.pop();
-          }
-          resolve();
+    const interval = setInterval(() => {
+      this.#removeLastChar(this.#span);
+      i++;
+      if (i === numToErase) {
+        clearInterval(interval);
+        if (this.#spans.length > 1) {
+          // We are removing this span - so text will be previous colour
+          this.#div.removeChild(this.#span);
+          this.#spans.pop();
+          this.#span = this.#spans[this.#spans.length - 1];
         }
-      }, Math.floor((1.0 / this.#options.deletingRate) * 1000));
+
+        console.log(`erase(): num=${numToErase}, erased=${i}`);
+
+        resolve();
+      }
+    }, Math.floor((1.0 / this.#options.deletingRate) * 1000));
+  }
+
+  erase() {
+    this.#queueAction(async (resolve) => {
+      await new Promise((res) => {
+        this.doErase(res);
+      });
+
+      resolve();
     });
 
     return this;
@@ -169,7 +209,7 @@ class Typewriter {
   }
 
   clear() {
-    this.#addAction((resolve) => {
+    this.#queueAction((resolve) => {
       this.#div.innerHTML = "";
       this.#span = this.#spans[0];
       this.#span.innerText = "";
@@ -181,16 +221,20 @@ class Typewriter {
     return this;
   }
 
+  doDelay(ms: number, resolve: ResolveFnType) {
+    return new Promise(() => setTimeout(() => resolve(), ms));
+  }
+
   delay(ms: number) {
-    this.#addAction((resolve) => {
-      setTimeout(() => resolve(), ms);
+    this.#queueAction(async (resolve) => {
+      await this.doDelay(ms, resolve);
     });
 
     return this;
   }
 
   debug(message: string) {
-    this.#addAction((resolve) => {
+    this.#queueAction((resolve) => {
       this.debugNow(message);
       resolve();
     });
