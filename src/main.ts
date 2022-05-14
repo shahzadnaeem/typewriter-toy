@@ -10,31 +10,32 @@ const options: Options = {
 
 const tw = new Typewriter(root, options);
 
-tw.dynamicType(() => `It is now: ${new Date().toLocaleString()}`)
+tw.clear()
+  .dynamicType(() => `It is now: ${new Date().toLocaleString()}\n`)
   .delay(250)
   .debug("Done waiting 250ms")
-  .colour2("orangered", "\n\nInception!")
-  .type("\n\nJenny you totally love this right?")
+  .colour2("orangered", "\nInception!")
+  .type("\n\nHey! You totally love this right?")
   .delay(500)
-  .rainbow("\n\nROYGBIV -- I-love-rainbows-a-lot")
+  .type("\n\n")
+  .rainbow("ROYGBIV -- I-love-rainbows-a-lot")
   .colour("firebrick")
   .type("\n\nWhat a joyful things this is :)")
   .delay(500)
   .erase()
-  .type("\n\nShould be same colour as last letter of text above!")
-  .colour("greenyellow", "\n\nTHE FUN JUST DOES NOT STOP 👴👴👴")
+  .type("\nShould be same colour as last letter of text above!")
+  .colour("greenyellow", "\nTHE FUN JUST DOES NOT STOP 👴👴👴")
   .delay(250)
   .colour("yellow")
   .delay(250)
   .type(" ...")
   .delay(250)
-  .colour("blue", "\n\nHey! How about this???")
+  .colour("lightblue", "\n\nHey! How about this???")
   .allInOne(
     "orange",
     "\n\nThis is an all in one, type, delay erase thing!",
     500
   )
   .debug("")
-  .delay(250)
-  .clear()
+  .delay(1500)
   .start();

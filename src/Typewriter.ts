@@ -138,7 +138,7 @@ class Typewriter {
     el.innerText = el.innerText.slice(0, el.innerText.length - 1);
   }
 
-  doErase(resolve: ResolveFnType) {
+  doErase(success: ResolveFnType) {
     let i = 0;
     let numToErase = this.#span.innerText.length;
 
@@ -154,9 +154,7 @@ class Typewriter {
           this.#span = this.#spans[this.#spans.length - 1];
         }
 
-        console.log(`erase(): num=${numToErase}, erased=${i}`);
-
-        resolve();
+        success();
       }
     }, Math.floor((1.0 / this.#options.deletingRate) * 1000));
   }

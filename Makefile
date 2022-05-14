@@ -6,7 +6,9 @@ DEFAULT_TEST=jest
 
 HELP_TEXT="\n\
 Help\n\
+\tmake dev     - vite dev loop\n\
 \tmake build   - typescript build\n\
+\tmake preview - run built version\n\
 "
 
 help:
@@ -20,3 +22,9 @@ dev:
 
 preview: build
 	npm run preview
+
+PROJECTDIR=dist
+
+surge: build
+	surge --domain https://shaz-typewriter-toy.surge.sh $(PROJECTDIR) shaz-typewriter-toy.surge.sh
+
