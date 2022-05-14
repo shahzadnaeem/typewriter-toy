@@ -4,19 +4,17 @@
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Courier New', Courier, monospace;
   color: #2c3e50;
 
   display: flex;
   flex-flow: column;
   gap: 0.5rem;
-  width: 80%;
+  max-width: 800px;
   height: 100vh;
   margin: 0 auto;
   padding: 1rem 0;
-  /* border: 1px blue solid; */
+  line-height: 1.5;
 }
 
 .typewriter {
@@ -35,7 +33,6 @@
   font-size: medium;
   padding: 0.5rem;
   white-space: pre-wrap;
-  /* border: 1px solid red; */
   flex-grow: 1;
   max-height: 40vh;
   overflow-y: auto;

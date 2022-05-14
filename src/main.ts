@@ -3,9 +3,9 @@ import Typewriter, { Options } from "./Typewriter";
 
 const root = document.querySelector("#app") as HTMLElement;
 const options: Options = {
-  loop: false,
-  typingSpeed: 120,
-  deletingRate: 4,
+  loop: true,
+  typingSpeed: 50,
+  deletingRate: 10,
 };
 
 const tw = new Typewriter(root, options);
@@ -13,13 +13,26 @@ const tw = new Typewriter(root, options);
 tw.dynamicType(() => `It is now: ${new Date().toLocaleString()}`)
   .delay(250)
   .debug("Done waiting 250ms")
-  .type("\n\nLine 1 - Hello!")
-  .type("\n\nLine 2 ...")
+  .type("\n\nJenny you totally love this right?\n")
   .delay(500)
-  .clear()
+  .rainbow("ROYGBIV -- I-love-rainbows-a-lot")
+  .colour("firebrick")
+  .type("\n\nWhat a joyful things this is :)")
+  .delay(500)
+  .erase()
+  .type("\n\nTHE FUN JUST DOES NOT STOP 👴👴👴")
   .delay(250)
-  .type("More ...")
+  .colour("yellow")
   .delay(250)
-  .debug("Bored yet?")
+  .type(" ...")
+  .delay(250)
+  .colour("blue", "\n\nHey! How about this???")
+  .allInOne(
+    "orange",
+    "\n\nThis is an all in one, type, delay erase thing!",
+    500
+  )
+  .debug("")
+  .delay(250)
   .clear()
   .start();

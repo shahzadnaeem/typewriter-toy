@@ -12,11 +12,14 @@ const defaultOptions: Options = {
 
 type QueueItem = () => Promise<void>;
 type Queue = QueueItem[];
-type ActionType = (resolve: () => void) => void;
+type ResolveFnType = () => void;
+type ActionType = (resolve: ResolveFnType) => void;
 
 class Typewriter {
   #root: HTMLElement;
+  #div: HTMLDivElement;
   #span: HTMLSpanElement;
+  #spans: HTMLSpanElement[];
   #cursor: HTMLSpanElement;
   #debug: HTMLDivElement;
   #options: Options;
@@ -27,62 +30,151 @@ class Typewriter {
     this.#options = options;
 
     const div = document.createElement("div");
-    div.className = "typewriter";
-    this.#root.appendChild(div);
-    const span = document.createElement("span");
-    div.appendChild(span);
-    this.#span = span;
+    this.#div = this.#root.appendChild(div);
+    this.#div.className = "typewriter";
+
     const cursor = document.createElement("span");
-    cursor.append("┃");
-    div.appendChild(cursor);
-    this.#cursor = cursor;
+    this.#cursor = this.#div.appendChild(cursor);
+    this.#cursor.className = "cursor-on";
+    this.#cursor.append("┃");
+
+    const span = document.createElement("span");
+    this.#span = this.#div.insertBefore(span, this.#cursor);
+    this.#spans = [this.#span];
 
     const debug = document.createElement("div");
-    debug.className = "debug";
-    this.#root.appendChild(debug);
-    this.#debug = debug;
+    this.#debug = this.#root.appendChild(debug);
+    this.#debug.className = "debug";
   }
 
   #addAction(fn: ActionType) {
     this.#queue.push(() => new Promise(fn));
   }
 
-  type(message: string) {
-    this.#addAction((resolve) => {
-      let i = 0;
+  doType(message: string, resolve: ResolveFnType) {
+    let i = 0;
 
+    if (message.length) {
       const interval = setInterval(() => {
         this.#span.append(message[i++]);
+
         if (i === message.length) {
           clearInterval(interval);
           resolve();
         }
       }, this.#options.typingSpeed);
+    } else {
+      resolve();
+    }
+  }
+
+  type(message: string, msDelay = 0) {
+    this.#addAction((resolve) => {
+      this.doType(message, resolve);
+    });
+
+    this.delay(msDelay);
+
+    return this;
+  }
+
+  dynamicType(fn: () => string, msDelay = 0) {
+    this.#addAction((resolve) => {
+      let message = fn();
+
+      this.doType(message, resolve);
+    });
+
+    this.delay(msDelay);
+
+    return this;
+  }
+
+  colour(col: string, message: string = "") {
+    this.#addAction((resolve) => {
+      const span = document.createElement("span");
+      span.style.color = col;
+
+      this.#span = this.#div.insertBefore(span, this.#cursor);
+      this.#spans.push(this.#span);
+
+      resolve();
+    });
+
+    this.type(message);
+
+    return this;
+  }
+
+  #removeLastChar(el: HTMLSpanElement) {
+    el.innerText = el.innerText.slice(0, el.innerText.length - 1);
+  }
+
+  erase() {
+    this.#addAction((resolve) => {
+      let i = 0;
+      let numToErase = this.#span.innerText.length;
+
+      const interval = setInterval(() => {
+        this.#removeLastChar(this.#span);
+        i++;
+        if (i === numToErase) {
+          clearInterval(interval);
+          if (this.#spans.length > 1) {
+            this.#div.removeChild(this.#span);
+            this.#span = this.#spans[this.#spans.length - 2];
+            this.#spans.pop();
+          }
+          resolve();
+        }
+      }, Math.floor((1.0 / this.#options.deletingRate) * 1000));
     });
 
     return this;
   }
 
-  dynamicType(fn: () => string) {
-    this.#addAction((resolve) => {
-      let i = 0;
-      let message = fn();
+  allInOne(col: string, message: string, msDelay: number) {
+    this.colour(col, message);
+    this.delay(msDelay);
+    this.erase();
+    this.delay(msDelay);
 
-      const interval = setInterval(() => {
-        this.#span.append(message[i++]);
-        if (i === message.length) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, this.#options.typingSpeed);
-    });
+    return this;
+  }
+
+  // This will mess up erase -- can add a marker that is used by erase if it matters
+
+  rainbow(
+    message: string,
+    cols: string[] = [
+      "red",
+      "orange",
+      "yellow",
+      "green",
+      "blue",
+      "hotpink",
+      "violet",
+    ]
+  ) {
+    if (message.length && cols.length) {
+      const chars = message.split("");
+      let i = 0;
+      chars.forEach((ch) => {
+        this.colour(cols[i], `${ch}`);
+        i = (i + 1) % cols.length;
+      });
+    }
 
     return this;
   }
 
   clear() {
     this.#addAction((resolve) => {
+      this.#div.innerHTML = "";
+      this.#span = this.#spans[0];
       this.#span.innerText = "";
+      this.#div.append(this.#span, this.#cursor);
+      this.#spans = [this.#span];
       resolve();
     });
 
@@ -143,6 +235,7 @@ class Typewriter {
       }
 
       await action();
+
       if (this.#options.loop) this.#queue.push(action);
       action = this.#queue.shift();
       actionCount--;
