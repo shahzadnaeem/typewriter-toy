@@ -1,14 +1,14 @@
 export interface Options {
   loop: boolean | number;
   autoStart: boolean;
-  typingSpeed: number;
-  deletingRate: number;
+  typingRate: number; // chars/sec
+  deletingRate: number; // chars/sec
 }
 
 const defaultOptions: Options = {
   loop: false,
   autoStart: false,
-  typingSpeed: 50,
+  typingRate: 20,
   deletingRate: 5,
 };
 
@@ -78,7 +78,7 @@ class Typewriter {
           clearInterval(interval);
           resolve();
         }
-      }, this.#options.typingSpeed);
+      }, this.#rateToMsDelay(this.#options.typingRate));
     } else {
       resolve();
     }
@@ -154,6 +154,10 @@ class Typewriter {
     el.innerText = el.innerText.slice(0, el.innerText.length - 1);
   }
 
+  #rateToMsDelay(rate: number) {
+    return Math.floor(1000.0 / rate);
+  }
+
   doErase(success: ResolveFnType) {
     let i = 0;
     let numToErase = this.#span.innerText.length;
@@ -172,7 +176,7 @@ class Typewriter {
 
         success();
       }
-    }, Math.floor((1.0 / this.#options.deletingRate) * 1000));
+    }, this.#rateToMsDelay(this.#options.deletingRate));
   }
 
   erase() {
@@ -196,7 +200,7 @@ class Typewriter {
     return this;
   }
 
-  // This will mess up erase -- can add a marker that is used by erase if it matters
+  // This will mess up erase (creates multiple spans of 1 char each) -- can add a marker span that is used by erase if it matters
 
   rainbow(
     message: string,
@@ -292,6 +296,14 @@ class Typewriter {
     this.#running = true;
     this.#disableStartButton();
 
+    this.debugClearNow();
+    this.debugNow(`Starting...`);
+    this.debugNow(
+      `Options: loop: ${this.#options.loop.toString()}, autoStart: ${this.#options.autoStart.toString()}, typingRate: ${
+        this.#options.typingRate
+      }, deletingRate: ${this.#options.deletingRate}\n`
+    );
+
     let cursor = true;
 
     const cursorInterval = setInterval(() => {
@@ -301,15 +313,18 @@ class Typewriter {
 
     const numActions = this.#queue.length;
     let loopNum = 0;
+    const forever = this.#options.loop === true;
 
     do {
       loopNum++;
 
       if (loopNum % 2 === 1) {
-        this.debugClearNow();
+        if (loopNum !== 1) {
+          this.debugClearNow();
+        }
         this.debugNow(
           `## Starting loop: ${loopNum} of ${
-            this.#options.loop
+            this.#options.loop === true ? "∞" : this.#options.loop
           } with ${numActions} actions`
         );
       }
@@ -317,7 +332,7 @@ class Typewriter {
       for (let action of this.#queue) {
         await action();
       }
-    } while (this.#options.loop && this.#options.loop !== loopNum);
+    } while (forever || (this.#options.loop && this.#options.loop !== loopNum));
 
     clearInterval(cursorInterval);
 

@@ -1,6 +1,6 @@
 # Typewriter Toy
 
-A typewrite toy written in TS based on this [this YouTube page - Web Dev Simplified](https://www.youtube.com/watch?v=gWD0EJgBlYQ)
+A typewriter toy written in TS based on this [this YouTube page - Web Dev Simplified](https://www.youtube.com/watch?v=gWD0EJgBlYQ)
 
 ## Setup
 
@@ -21,3 +21,8 @@ $ make dev
 
 ```
 
+## Notes
+
+Promises abound!
+
+See colour() vs colour2()
