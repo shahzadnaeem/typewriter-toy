@@ -10,12 +10,16 @@ Created using Vite as mentioned in the video
 $ npm create vite@latest
 $ cd typewriter-toy
 $ npm add -D vite-plugin-checker
+```
 
+## Running
+
+```sh
 $ npm install
 
 $ npm run dev
 
-# Makefile commands
+# or run with make
 
 $ make dev
 
@@ -23,6 +27,6 @@ $ make dev
 
 ## Notes
 
-Promises abound!
+Promises abound! - see colour() vs colour2()
 
-See colour() vs colour2()
+The code needs a little refactoring :)
