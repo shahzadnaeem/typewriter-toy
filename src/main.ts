@@ -1,3 +1,4 @@
+import "./reset.css";
 import "./style.css";
 import Typewriter, { Options } from "./Typewriter";
 
