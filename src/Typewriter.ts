@@ -25,13 +25,15 @@ class Typewriter {
   #spans: HTMLSpanElement[];
   #cursor: HTMLSpanElement;
   #debug: HTMLDivElement;
+  #initialOptions: Options;
   #options: Options;
   #queue: Queue = [];
   #running: boolean;
 
   constructor(root: HTMLElement, options: Options = defaultOptions) {
     this.#root = root;
-    this.#options = options;
+    this.#initialOptions = { ...options };
+    this.#options = { ...options };
     this.#running = false;
 
     const button = document.createElement("button");
@@ -253,6 +255,42 @@ class Typewriter {
     return this;
   }
 
+  setTypingRate(charsPerSec: number) {
+    this.#queueAction(async (resolve) => {
+      this.#options.typingRate = charsPerSec;
+      resolve();
+    });
+
+    return this;
+  }
+
+  setDeletingRate(charsPerSec: number) {
+    this.#queueAction(async (resolve) => {
+      this.#options.deletingRate = charsPerSec;
+      resolve();
+    });
+
+    return this;
+  }
+
+  resetTypingRate() {
+    this.#queueAction(async (resolve) => {
+      this.#options.typingRate = this.#initialOptions.typingRate;
+      resolve();
+    });
+
+    return this;
+  }
+
+  resetDeletingRate() {
+    this.#queueAction(async (resolve) => {
+      this.#options.deletingRate = this.#initialOptions.deletingRate;
+      resolve();
+    });
+
+    return this;
+  }
+
   debug(message: string) {
     this.#queueAction((resolve) => {
       this.debugNow(message);
@@ -293,6 +331,8 @@ class Typewriter {
   }
 
   async start() {
+    this.#options = { ...this.#initialOptions };
+
     this.#running = true;
     this.#disableStartButton();
 
